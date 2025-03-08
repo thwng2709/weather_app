@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -16,12 +17,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.weatherapp.models.WeatherResponse
 import com.example.weatherapp.utils.Constant
+import com.example.weatherapp.utils.Constant.APP_ID
+import com.example.weatherapp.utils.Constant.BASE_URL
+import com.example.weatherapp.utils.Constant.METRIC_UNIT
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
     private val REQUEST_LOCATION_CODE = 1
@@ -59,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         deviceId: Int
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
-        if (requestCode == REQUEST_LOCATION_CODE && grantResults.size > 0) {
+        if (requestCode == REQUEST_LOCATION_CODE && grantResults.isNotEmpty()) {
             Toast.makeText(this@MainActivity, "Permission granted", Toast.LENGTH_SHORT).show()
             requestLocationData()
         } else {
@@ -73,22 +84,52 @@ class MainActivity : AppCompatActivity() {
         mFusedLocationProviderClient.requestLocationUpdates(
             locationRequest,
             object : LocationCallback() {
-                override fun onLocationResult(locationResult: com.google.android.gms.location.LocationResult) {
+                override fun onLocationResult(locationResult: LocationResult) {
                     Toast.makeText(
                         this@MainActivity,
                         "Lattitude ${locationResult.lastLocation?.latitude} \nLongitude ${locationResult.lastLocation?.longitude}",
                         Toast.LENGTH_SHORT
                     ).show()
-                    getLocationWeatherDetails()
+                    getLocationWeatherDetails(
+                        locationResult.lastLocation?.latitude!!,
+                        locationResult.lastLocation?.longitude!!
+                    )
                 }
             },
             Looper.myLooper()
         )
     }
 
-    private fun getLocationWeatherDetails() {
+    private fun getLocationWeatherDetails(latitude: Double, longitude: Double) {
         if (Constant.isNetworkAvailable(this)) {
-            Toast.makeText(this, "Fetching location weather details", Toast.LENGTH_SHORT).show()
+            val retrofit = Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+            val service = retrofit.create(WeatherServiceApi::class.java)
+            val call = service.getWeatherDetails(latitude, longitude, APP_ID, METRIC_UNIT)
+
+            call.enqueue(object : Callback<WeatherResponse> {
+                override fun onResponse(p0: Call<WeatherResponse>, p1: Response<WeatherResponse>) {
+                    if (p1.isSuccessful) {
+                        val weatherResponse = p1.body()
+                        if (weatherResponse != null) {
+                            Log.d("weather", weatherResponse.toString())
+                        }
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Something went wrong",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                override fun onFailure(p0: Call<WeatherResponse>, p1: Throwable) {
+                    Toast.makeText(this@MainActivity, "", Toast.LENGTH_SHORT).show()
+                }
+            })
         } else {
             Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
         }
