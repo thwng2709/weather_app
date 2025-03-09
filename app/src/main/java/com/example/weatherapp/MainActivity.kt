@@ -11,12 +11,10 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import com.example.weatherapp.databinding.ActivityMainBinding
 import com.example.weatherapp.models.WeatherResponse
 import com.example.weatherapp.utils.Constant
 import com.example.weatherapp.utils.Constant.APP_ID
@@ -35,18 +33,13 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
+    private val _binding: ActivityMainBinding = ActivityMainBinding.inflate(layoutInflater)
     private val REQUEST_LOCATION_CODE = 1
     private lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        setContentView(_binding.root)
 
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -113,9 +106,21 @@ class MainActivity : AppCompatActivity() {
             call.enqueue(object : Callback<WeatherResponse> {
                 override fun onResponse(p0: Call<WeatherResponse>, p1: Response<WeatherResponse>) {
                     if (p1.isSuccessful) {
-                        val weatherResponse = p1.body()
-                        if (weatherResponse != null) {
-                            Log.d("weather", weatherResponse.toString())
+                        val weather = p1.body()
+                        if (weather != null) {
+                            Log.d("weather", weather.toString())
+                            for (i in weather.weather.indices) {
+                                _binding.tvSunset.text = weather.sys.sunset.toString()
+                                _binding.tvSunrise.text = weather.sys.sunrise.toString()
+                                _binding.tvStatus.text = weather.weather[i].main
+                                _binding.tvAddress.text = weather.name
+                                _binding.tvTempMax.text = weather.main.temp_max.toString()
+                                _binding.tvTempMin.text = weather.main.temp_min.toString()
+                                _binding.tvTemp.text = weather.main.temp.toString()
+                                _binding.tvHumidity.text = weather.main.humidity.toString()
+                                _binding.tvPressure.text = weather.main.pressure.toString()
+                                _binding.tvWind.text = weather.wind.speed.toString()
+                            }
                         }
                     } else {
                         Toast.makeText(
