@@ -31,14 +31,19 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class MainActivity : AppCompatActivity() {
-    private val _binding: ActivityMainBinding = ActivityMainBinding.inflate(layoutInflater)
+    private lateinit var _binding: ActivityMainBinding
     private val REQUEST_LOCATION_CODE = 1
     private lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(_binding.root)
 
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -55,6 +60,7 @@ class MainActivity : AppCompatActivity() {
             requestPermission()
         }
     }
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -78,11 +84,6 @@ class MainActivity : AppCompatActivity() {
             locationRequest,
             object : LocationCallback() {
                 override fun onLocationResult(locationResult: LocationResult) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Lattitude ${locationResult.lastLocation?.latitude} \nLongitude ${locationResult.lastLocation?.longitude}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                     getLocationWeatherDetails(
                         locationResult.lastLocation?.latitude!!,
                         locationResult.lastLocation?.longitude!!
@@ -110,8 +111,8 @@ class MainActivity : AppCompatActivity() {
                         if (weather != null) {
                             Log.d("weather", weather.toString())
                             for (i in weather.weather.indices) {
-                                _binding.tvSunset.text = weather.sys.sunset.toString()
-                                _binding.tvSunrise.text = weather.sys.sunrise.toString()
+                                _binding.tvSunset.text = convertTime(weather.sys.sunset.toLong())
+                                _binding.tvSunrise.text = convertTime(weather.sys.sunrise.toLong())
                                 _binding.tvStatus.text = weather.weather[i].main
                                 _binding.tvAddress.text = weather.name
                                 _binding.tvTempMax.text = weather.main.temp_max.toString()
@@ -138,6 +139,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun convertTime(time: Long): String {
+        val date = Date(time * 1000)
+        val timeFormatted = SimpleDateFormat("HH:mm", Locale.UK)
+        timeFormatted.timeZone = TimeZone.getDefault()
+        return timeFormatted.format(date)
     }
 
     private fun isLocationEnabled(): Boolean {
