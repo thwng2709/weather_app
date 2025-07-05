@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,6 +15,7 @@ import com.example.weatherapp.databinding.ActivityMainBinding
 import com.example.weatherapp.network.WeatherServiceApi
 import com.example.weatherapp.utils.Constants
 import com.example.weatherapp.utils.Constants.BASE_URL
+import com.example.weatherapp.utils.Constants.convertLongToTime
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -92,6 +94,7 @@ class MainActivity : AppCompatActivity() {
             override fun onLocationResult(result: LocationResult) {
                 val location: Location? = result.lastLocation
                 if (location != null) {
+                    Log.d("WEATHER", "lat: ${location.latitude}\n long: ${location.longitude}")
                     getWeatherData(location.latitude, location.longitude)
                 }
             }
@@ -123,16 +126,26 @@ class MainActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         val weather: WeatherResponse? = response.body()
                         for (i in weather?.weather!!.indices) {
-                            binding.textViewSunset.text = weather.sys.sunset.toString()
-                            binding.textViewSunrise.text = weather.sys.sunrise.toString()
-                            binding.textViewStatus.text = weather.weather[i].description
+                            val timeZoneOffset: Long = weather.timezone.toLong()
+                            binding.textViewSunset.text =
+                                convertLongToTime(weather.sys.sunset.toLong(), timeZoneOffset)
+                            binding.textViewSunrise.text =
+                                convertLongToTime(weather.sys.sunrise.toLong(), timeZoneOffset)
+                            binding.textViewStatus.text =
+                                Constants.formatDescription(weather.weather[i].description)
                             binding.textViewAddress.text = weather.name
-                            binding.textViewTempMax.text = weather.main.temp_max.toString()
-                            binding.textViewTempMin.text = weather.main.temp_min.toString()
-                            binding.textViewTemp.text = weather.main.temp.toString()
-                            binding.textViewHumidity.text = weather.main.humidity.toString()
+                            binding.textViewUpdatedAt.text = Constants.currentDateFormat()
+                            binding.textViewTempMax.text =
+                                Constants.formatMaxTemp("Max", weather.main.temp_max)
+                            binding.textViewTempMin.text =
+                                Constants.formatMaxTemp("Min", weather.main.temp_min)
+                            binding.textViewTemp.text =
+                                Constants.formatCelsius(weather.main.temp)
+                            binding.textViewHumidity.text =
+                                Constants.formatHumidity(weather.main.humidity)
                             binding.textViewPressure.text = weather.main.pressure.toString()
-                            binding.textViewWind.text = weather.wind.speed.toString()
+                            binding.textViewWind.text =
+                                Constants.formatWindSpeed(weather.wind.speed)
                         }
                     } else {
                         Toast.makeText(

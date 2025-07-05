@@ -12,13 +12,14 @@
         android:id="@+id/mainContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible">
+        android:visibility="visible">z
 
         <LinearLayout
             android:id="@+id/addressContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
+            android:layout_marginTop="10dp"
             android:orientation="vertical">
 
             <TextView
@@ -37,7 +38,6 @@
                 android:textSize="14sp"
                 tools:text="20 April 2012, 20:08 PM" />
         </LinearLayout>
-
 
         <LinearLayout
             android:id="@+id/overviewContainer"
@@ -339,6 +339,7 @@
                         android:id="@+id/text_view_about"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="Isthwng"
                         android:textColor="@color/white"
                         android:textSize="14sp"
                         tools:text="Evan" />
@@ -346,7 +347,6 @@
             </LinearLayout>
         </LinearLayout>
     </RelativeLayout>
-
 
     <ProgressBar
         android:id="@+id/progressbar"
